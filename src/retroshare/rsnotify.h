@@ -66,6 +66,7 @@ const uint32_t RS_FEED_TYPE_PEER     = 0x0010;
 const uint32_t RS_FEED_TYPE_CHANNEL  = 0x0020;
 const uint32_t RS_FEED_TYPE_FORUM    = 0x0040;
 //const uint32_t RS_FEED_TYPE_BLOG     = 0x0080;
+const uint32_t RS_FEED_TYPE_IDENTITY  = 0x00A0;
 const uint32_t RS_FEED_TYPE_CHAT     = 0x0100;
 const uint32_t RS_FEED_TYPE_MSG      = 0x0200;
 const uint32_t RS_FEED_TYPE_FILES    = 0x0400;
@@ -73,6 +74,10 @@ const uint32_t RS_FEED_TYPE_SECURITY = 0x0800;
 const uint32_t RS_FEED_TYPE_POSTED   = 0x1000;
 const uint32_t RS_FEED_TYPE_SECURITY_IP = 0x2000;
 const uint32_t RS_FEED_TYPE_CIRCLE   = 0x4000;
+
+#ifdef RS_USE_WIRE
+const uint32_t RS_FEED_TYPE_WIRE  = 0x8000;
+#endif
 
 const uint32_t RS_FEED_ITEM_PEER_CONNECT            = RS_FEED_TYPE_PEER  | 0x0001;
 const uint32_t RS_FEED_ITEM_PEER_DISCONNECT         = RS_FEED_TYPE_PEER  | 0x0002;
@@ -122,6 +127,11 @@ const uint32_t RS_FEED_ITEM_CIRCLE_MEMB_JOIN       = RS_FEED_TYPE_CIRCLE  | 0x00
 const uint32_t RS_FEED_ITEM_CIRCLE_MEMB_ACCEPTED   = RS_FEED_TYPE_CIRCLE  | 0x0005;
 const uint32_t RS_FEED_ITEM_CIRCLE_MEMB_REVOKED    = RS_FEED_TYPE_CIRCLE  | 0x0006;
 const uint32_t RS_FEED_ITEM_CIRCLE_INVITE_CANCELLED= RS_FEED_TYPE_CIRCLE  | 0x0007;
+
+const uint32_t RS_FEED_ITEM_IDENTITY_NEW                   = RS_FEED_TYPE_IDENTITY  | 0x0001;
+const uint32_t RS_FEED_ITEM_IDENTITY_MSG                   = RS_FEED_TYPE_IDENTITY  | 0x0002;
+const uint32_t RS_FEED_ITEM_IDENTITYCONTACT_ADD            = RS_FEED_TYPE_IDENTITY  | 0x0003;
+const uint32_t RS_FEED_ITEM_IDENTITYCONTACT_UPDATE         = RS_FEED_TYPE_IDENTITY  | 0x0004;
 
 const uint32_t RS_MESSAGE_CONNECT_ATTEMPT    = 0x0001;
 
@@ -232,6 +242,10 @@ public:
 	virtual void notifyOwnStatusMessageChanged    () {}
 	virtual void notifyDiskFull                   (uint32_t           /* location  */, uint32_t                         /* size limit in MB */) {}
 	virtual void notifyPeerStatusChanged          (const std::string& /* peer_id   */, uint32_t                         /* status           */) {}
+
+	virtual void notifyGxsChange                  (const RsGxsChanges& /* changes  */) {}
+	virtual void notifyConnectionWithoutCert      () {}
+	virtual void notifyGxsContactStatusChanged    (const std::string&  /* peer_id   */, uint32_t  /* status           */) {}
 
 	/* one or more peers has changed the states */
 	virtual void notifyPeerStatusChangedSummary   () {}

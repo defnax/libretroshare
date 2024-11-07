@@ -41,6 +41,9 @@ const uint32_t RS_CHAT_FLAG_PRIVATE                    = 0x0001;
 const uint32_t RS_CHAT_FLAG_REQUESTS_AVATAR            = 0x0002;
 const uint32_t RS_CHAT_FLAG_CONTAINS_AVATAR            = 0x0004;
 const uint32_t RS_CHAT_FLAG_AVATAR_AVAILABLE           = 0x0008;
+const uint32_t RS_CHAT_FLAG_REQUEST_ACK                = 0x0009;
+const uint32_t RS_CHAT_FLAG_APPROVE_ACK                = 0x000A;
+const uint32_t RS_CHAT_FLAG_REJECT_ACK                 = 0x000B;
 const uint32_t RS_CHAT_FLAG_CUSTOM_STATE               = 0x0010;  // used for transmitting peer status string
 const uint32_t RS_CHAT_FLAG_PUBLIC                     = 0x0020;
 const uint32_t RS_CHAT_FLAG_REQUEST_CUSTOM_STATE       = 0x0040;
@@ -84,6 +87,17 @@ const uint8_t RS_PKT_SUBTYPE_CHAT_LOBBY_INVITE            = 0x1B ;
 const uint8_t RS_PKT_SUBTYPE_OUTGOING_MAP                 = 0x1C ;
 
 const uint8_t RS_PKT_SUBTYPE_SUBSCRIBED_CHAT_LOBBY_CONFIG = 0x1D ;
+
+const uint8_t RS_PKT_SUBTYPE_GXSCHAT_ACCEPT                 = 0x30 ; //unseenp2pdev - for lobby Inviation/Accept
+const uint8_t RS_PKT_SUBTYPE_GXSCHAT_INVITE                 = 0x31 ; //unseenp2pdev - for lobby Inviation/Accept
+const uint8_t RS_PKT_SUBTYPE_GXSCHAT_MSG                    = 0x32 ; //unseenp2pdev - gxschat message
+const uint8_t RS_PKT_SUBTYPE_GXSCHAT_PUBLISH_KEY            = 0x33 ; //unseenp2pdev - gxschat shared publish key
+const uint8_t RS_PKT_SUBTYPE_GXSCHAT_GROUP                  = 0x34 ; //unseenp2pdev - gxschat shared publish key
+
+const uint8_t RS_PKT_SUBTYPE_GXSCHAT_REQUEST                = 0x35 ; //unseenp2pdev - for lobby Inviation/Accept
+const uint8_t RS_PKT_SUBTYPE_GXSCHAT_APPROVED               = 0x36 ; //unseenp2pdev - for lobby Inviation/Accept
+const uint8_t RS_PKT_SUBTYPE_GXSCHAT_REJECT                 = 0x37 ; //unseenp2pdev - for lobby Inviation/Accept
+const uint8_t RS_PKT_SUBTYPE_GXSCHAT_ACTKN                  = 0x38 ; //unseenp2pdev - for lobby Inviation/Accept
 
 typedef uint64_t 		ChatLobbyId ;
 typedef uint64_t 		ChatLobbyMsgId ;

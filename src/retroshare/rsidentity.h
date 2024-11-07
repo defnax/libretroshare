@@ -160,6 +160,64 @@ struct RsGxsIdGroup : RsSerializable
 };
 
 // DATA TYPE FOR EXTERNAL INTERFACE.
+class RsGxsMyContact: RsSerializable
+{
+    public:
+        enum STATUS {UNKNOWN,PENDING,PENDING_REQ, PENDING_ACCEPT, REQUEST,ACCEPT, APPROVE, TRUSTED, BANNED, REJECT, ACK};
+        /*  PENDING=NOT READY, PENDING_REQ=ALREADY SENT REQUEST, PENDING_ACCEPT=ALREADY RECEIVE REQ
+         *  ACCEPT=  APPROVE already add Friend.
+         *  BANNED = REJECT TO BE FRIEND
+         *  TRUST  = CONNECTION ESTABLISHED
+         *  Example: A add B:  A Add Contact step: Pending, Send Request/ack: PENDING_REQ,
+         *                 B: PENDING_ACCEPT, B's Approved/Accept, Sending Approved to A.
+         *                 A: Validate B's Cert and Accept. A send ACK to B.
+         *                 A connects to B: Online,  A->Trust, B->Trust.
+        **/
+        RsGxsId gxsId;
+        RsPgpId mPgpId;
+        RsPeerId  peerId;
+        std::string name;
+        STATUS status;
+
+        //CertURL:" "
+        //Devices:" "
+        //chatURL: " " //one2one gxsChat URL to this friend.
+        std::map<std::string,std::string> mContactInfo;
+
+        RsGxsMyContact(): status (UNKNOWN){};
+        RsGxsMyContact(RsGxsId nId):gxsId(nId), status(PENDING){};
+        RsGxsMyContact(RsGxsId nId, RsPgpId nPgpId, RsPeerId  nsslId, std::string newName, STATUS nstatus ):
+            gxsId(nId), mPgpId(nPgpId), peerId(nsslId), name(newName), status(nstatus){};
+
+        virtual void serial_process(RsGenericSerializer::SerializeJob j,RsGenericSerializer::SerializeContext& ctx);
+        virtual void clear();
+
+        void operator=(const RsGxsMyContact &contact){
+            name    = contact.name;
+            gxsId   = contact.gxsId;
+            peerId  = contact.peerId;
+            mPgpId  = contact.mPgpId;
+            status  = contact.status;
+            mContactInfo=contact.mContactInfo;
+        }
+        bool operator==(const RsGxsMyContact& comp ) const
+        {
+            return gxsId== comp.gxsId ;
+        }
+        bool operator()(const RsGxsMyContact& b) const
+        {
+            return gxsId < b.gxsId;
+        }
+
+        bool operator<(const RsGxsMyContact b) const
+        {
+            return gxsId < b.gxsId;
+        }
+
+};
+//making this object sortable and can insert into std::set<RsGxsMyContact>
+
+// DATA TYPE FOR EXTERNAL INTERFACE.
 
 struct RS_DEPRECATED RsRecognTag
 {

@@ -1585,7 +1585,7 @@ int RsServer::StartupRetroShare()
 	mGxsTunnels = new p3GxsTunnelService(mGxsIdService) ;
 	mGxsTunnels->connectToTurtleRouter(tr) ;
 	rsGxsTunnel = mGxsTunnels;
-
+	mGxsIdService->connectToGxsTunnelService(mGxsTunnels);
 	mGxsNetTunnel->connectToTurtleRouter(tr) ;
 
 	rsGossipDiscovery.reset(mDisc);

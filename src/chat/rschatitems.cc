@@ -55,7 +55,14 @@ RsItem *RsChatSerialiser::create_item(uint16_t service_id,uint8_t item_sub_id) c
 	case RS_PKT_SUBTYPE_CHAT_LOBBY_CONFIG: return new RsChatLobbyConfigItem();
 	case RS_PKT_SUBTYPE_SUBSCRIBED_CHAT_LOBBY_CONFIG: return new RsSubscribedChatLobbyConfigItem();
 	case RS_PKT_SUBTYPE_OUTGOING_MAP: return new PrivateOugoingMapItem();
-	default:
+    case RS_PKT_SUBTYPE_GXSCHAT_GROUP: return new GxsNxsChatGroupItem();  //adding direct chat gxs group message
+    case RS_PKT_SUBTYPE_GXSCHAT_MSG: return new GxsNxsChatMsgItem();          //adding direct chat gxs message
+    case RS_PKT_SUBTYPE_GXSCHAT_PUBLISH_KEY: return new GxsNxsGroupPublishKeyItem();  //adding direct share publish key gxs group
+    case RS_PKT_SUBTYPE_GXSCHAT_REQUEST: return new RsChatMsgItem(RS_PKT_SUBTYPE_GXSCHAT_REQUEST);
+    case RS_PKT_SUBTYPE_GXSCHAT_ACTKN:   return new RsChatMsgItem(RS_PKT_SUBTYPE_GXSCHAT_ACTKN);
+    case RS_PKT_SUBTYPE_GXSCHAT_APPROVED: return new RsChatMsgItem(RS_PKT_SUBTYPE_GXSCHAT_APPROVED);
+    case RS_PKT_SUBTYPE_GXSCHAT_REJECT: return new RsChatMsgItem(RS_PKT_SUBTYPE_GXSCHAT_REJECT);
+    default:
 		std::cerr << "Unknown packet type in chat!" << std::endl;
 		return NULL;
 	}
@@ -70,6 +77,45 @@ void RsChatMsgItem::serial_process(RsGenericSerializer::SerializeJob j,RsGeneric
 
 /*************************************************************************/
 
+void GxsNxsChatMsgItem::serial_process( RsGenericSerializer::SerializeJob j,
+                               RsGenericSerializer::SerializeContext& ctx )
+{
+    RS_SERIAL_PROCESS(transactionNumber);
+    RS_SERIAL_PROCESS(pos);
+    RS_SERIAL_PROCESS(msgId);
+    RS_SERIAL_PROCESS(grpId);
+    RS_SERIAL_PROCESS(msg);
+    RS_SERIAL_PROCESS(meta);
+}
+
+void GxsNxsChatGroupItem::serial_process(RsGenericSerializer::SerializeJob j,RsGenericSerializer::SerializeContext& ctx)
+{
+    RsTypeSerializer::serial_process<uint32_t> (j,ctx,transactionNumber,"transactionNumber") ;
+    RsTypeSerializer::serial_process<uint8_t>  (j,ctx,pos              ,"pos") ;
+    RsTypeSerializer::serial_process           (j,ctx,grpId            ,"grpId") ;
+    RsTypeSerializer::serial_process<RsTlvItem>(j,ctx,grp              ,"grp") ;
+    RsTypeSerializer::serial_process<RsTlvItem>(j,ctx,meta             ,"meta") ;
+}
+
+void GxsNxsGroupPublishKeyItem::serial_process(RsGenericSerializer::SerializeJob j,RsGenericSerializer::SerializeContext& ctx)
+{
+    RsTypeSerializer::serial_process           (j,ctx,grpId            ,"grpId") ;
+    RsTypeSerializer::serial_process<RsTlvItem>(j,ctx,private_key      ,"private_key") ;
+}
+
+void GxsNxsGroupPublishKeyItem::clear()
+{
+    private_key.TlvClear();
+}
+
+RsChatAvatarItem::~RsChatAvatarItem()
+{
+	if(image_data != NULL)
+	{
+		free(image_data) ;
+		image_data = NULL ;
+	}
+}
 void RsChatLobbyBouncingObject::serial_process(RsGenericSerializer::SerializeJob j, RsGenericSerializer::SerializeContext& ctx)
 {
     RsTypeSerializer::serial_process(j,ctx,lobby_id,"lobby_id") ;

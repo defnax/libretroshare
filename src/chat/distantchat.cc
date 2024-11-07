@@ -67,10 +67,13 @@ uint32_t msecs_of_day()
 
 static const uint32_t DISTANT_CHAT_GXS_TUNNEL_SERVICE_ID = 0xa0001 ;
 
-DistantChatService::DistantChatService() :
-    // default: accept everyone
-    mDistantChatPermissions(RS_DISTANT_CHAT_CONTACT_PERMISSION_FLAG_FILTER_NONE),
-    mGxsTunnels(nullptr), mDistantChatMtx("distant chat") {}
+typedef RsGxsTunnelService::RsGxsTunnelId RsGxsTunnelId;
+
+DistantChatService::DistantChatService()  : mDistantChatMtx("distant chat")
+{
+	mGxsTunnels = mGxsTunnels ;
+	mDistantChatPermissions = RS_DISTANT_CHAT_CONTACT_PERMISSION_FLAG_FILTER_NONE ;	// default: accept everyone
+}
 
 void DistantChatService::connectToGxsTunnelService(RsGxsTunnelService *tr)
 {
@@ -140,7 +143,7 @@ bool DistantChatService::acceptDataFromPeer(const RsGxsId& gxs_id,const RsGxsTun
     bool res = true ;
 
     if(mDistantChatPermissions & RS_DISTANT_CHAT_CONTACT_PERMISSION_FLAG_FILTER_NON_CONTACTS)
-        res = (rsIdentity!=NULL) && rsIdentity->isARegularContact(gxs_id) ;
+        res = (rsIdentity!=NULL) && rsIdentity->isARegularContact(gxs_id)|| rsIdentity->validContact(gxs_id));
     
     if(mDistantChatPermissions & RS_DISTANT_CHAT_CONTACT_PERMISSION_FLAG_FILTER_EVERYBODY)
         res = false ;
