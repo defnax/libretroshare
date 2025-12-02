@@ -61,7 +61,7 @@ jobs:
       - name: Checkout Support libs
         uses: actions/checkout@v6
         with:
-           repository: RetroShare/RetroShare/tree/master/supportlibs
+           repository: RetroShare/RetroShare
            path: supportlibs
 
       - name: Checkout submodules
