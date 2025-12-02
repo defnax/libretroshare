@@ -50,8 +50,6 @@ jobs:
             mingw-w64-x86_64-libxslt
             mingw-w64-x86_64-xapian-core
             mingw-w64-x86_64-sqlcipher
-            mingw-w64-x86_64-qt5-base
-            mingw-w64-x86_64-qt5-multimedia
             mingw-w64-x86_64-ccmake
             mingw-w64-x86_64-rapidjson
             mingw-w64-x86_64-json-c
@@ -64,11 +62,11 @@ jobs:
            repository: RetroShare/RetroShare
            path: supportlibs
 
-      - name: Checkout submodules
-        run: |
-          env
-          git submodule update --init --remote libbitdht/ libretroshare/ retroshare-webui/
-          git submodule update --init supportlibs/librnp supportlibs/rapidjson supportlibs/restbed
+      - name: Checkout BitDHT
+        uses: actions/checkout@v6
+        with:
+           repository: RetroShare/BitDHT
+           path: BitDHT
 
       - name: CI-Build
         run: |
