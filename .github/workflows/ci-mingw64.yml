@@ -58,6 +58,12 @@ jobs:
             mingw-w64-x86_64-libbotan
             mingw-w64-x86_64-asio
 
+      - name: Checkout Support libs
+        uses: actions/checkout@v6
+        with:
+           repository: https://github.com/RetroShare/RetroShare/tree/master/supportlibs
+           path: supportlibs
+
       - name: Checkout submodules
         run: |
           env
