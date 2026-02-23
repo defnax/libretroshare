@@ -687,8 +687,7 @@ void p3I2pSam3::establishConnection(taskTicket *ticket)
 
 		struct Sam3Connection *connection;
 		{
-			auto l = this->mLockSam3Access;
-			RS_STACK_MUTEX(l);
+			RS_STACK_MUTEX(mLockSam3Access);
 			mSetting.session->silent = false;
 			connection = sam3StreamConnect(this->mSetting.session, wrapper->address.publicKey.c_str());
 		}
@@ -700,8 +699,7 @@ void p3I2pSam3::establishConnection(taskTicket *ticket)
 		} else {
 			wrapper->connection = connection;
 			{
-				auto l = this->mLockSam3Access;
-				RS_STACK_MUTEX(l);
+				RS_STACK_MUTEX(mLockSam3Access);
 				this->mValidConnections.push_back(connection);
 			}
 			RS_DBG1("success");
