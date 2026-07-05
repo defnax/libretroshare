@@ -1185,6 +1185,19 @@ bool p3PeerMgrIMPL::addSslOnlyFriend( const RsPeerId& sslId, const RsPgpId& pgp_
 	{ RS_STACK_MUTEX(mPeerMtx);
 		mFriendList[sslId] = pstate;
 		mStatusChanged = true;
+
+		/* Establish default (empty) service permissions for this PGP id if none
+		 * exist yet. This is essential: addSslOnlyFriend() is the entry point
+		 * used by short invites (webui, mobile, QR code...) and, unlike
+		 * addFriend(), it would otherwise leave mFriendsPermissionFlags without
+		 * an entry for this friend. Later on, gossip discovery and loadList call
+		 * addFriend() with the RS_NODE_PERM_ALL "keep the existing flags" mask,
+		 * relying on the per-friend entry to reduce it (service_flags &= entry).
+		 * With no entry that mask is written verbatim, silently granting the peer
+		 * DIRECT_DL | ALLOW_PUSH | REQUIRE_WL. Registering RS_NODE_PERM_NONE here
+		 * makes the mask a no-op and matches the default of GUI-added friends. */
+		if(mFriendsPermissionFlags.find(pgp_id) == mFriendsPermissionFlags.end())
+			mFriendsPermissionFlags[pgp_id] = RS_NODE_PERM_NONE;
 	} // RS_STACK_MUTEX(mPeerMtx);
 
     IndicateConfigChanged(RsConfigMgr::CheckPriority::SAVE_NOW);
