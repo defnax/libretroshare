@@ -173,6 +173,7 @@ public:
 		* responsibility to delete this ones used.
 		*/
     void getAvatarData(const RsPeerId& peer_id,unsigned char *& data,int& size) override;
+    bool getAvatar(const RsPeerId& pid, std::string& avatar_base64_string) override;
 
 	/*!
 		 * Sets the avatar data and size for client's account

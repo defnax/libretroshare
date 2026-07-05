@@ -459,6 +459,15 @@ public:
 
     // get avatar data for peer pid
     virtual void getAvatarData(const RsPeerId& pid,unsigned char *& data,int& size) = 0 ;
+
+    /**
+     * @brief getAvatar get the avatar data for a peer
+     * @jsonapi{development}
+     * @param[in] pid peer id
+     * @param[out] avatar_base64_string avatar data as base64 string
+     * @return true on success
+     */
+    virtual bool getAvatar(const RsPeerId& pid, std::string& avatar_base64_string) = 0;
     // set own avatar data
     virtual void setOwnNodeAvatarData(const unsigned char *data,int size) = 0 ;
     virtual void getOwnNodeAvatarData(unsigned char *& data,int& size) = 0 ;

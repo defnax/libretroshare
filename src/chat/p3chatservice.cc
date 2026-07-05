@@ -31,6 +31,7 @@
 #include "util/rsrandom.h"
 #include "util/rsstring.h"
 #include "retroshare/rsiface.h"
+#include "util/rsbase64.h"
 #include "retroshare/rspeers.h"
 #include "retroshare/rsstatus.h"
 #include "pqi/pqibin.h"
@@ -1541,6 +1542,19 @@ void p3ChatService::getAvatarData(const RsPeerId& peer_id,unsigned char *& data,
             }
 		}
 	}
+}
+
+bool p3ChatService::getAvatar(const RsPeerId& pid, std::string& avatar_base64_string)
+{
+	unsigned char *data = nullptr;
+	int size = 0;
+	getAvatarData(pid, data, size);
+	if (data && size > 0) {
+		RsBase64::encode(data, size, avatar_base64_string, false, true);
+		free(data);
+		return true;
+	}
+	return false;
 }
 
 void p3ChatService::sendAvatarRequest(const RsPeerId& peer_id)
