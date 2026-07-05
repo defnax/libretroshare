@@ -50,7 +50,7 @@ enum class RsStatusValue: int32_t {
 /*!
  * data object used for peer status information
  */
-class StatusInfo
+class StatusInfo : public RsSerializable
 {
 	public:
     StatusInfo() : status(RsStatusValue::RS_STATUS_OFFLINE), time_stamp(0)	{}
@@ -59,6 +59,13 @@ class StatusInfo
 	RsPeerId id;
     RsStatusValue status;
 	rstime_t time_stamp; /// for owner time set, and for their peers time sent
+
+	void serial_process( RsGenericSerializer::SerializeJob j, RsGenericSerializer::SerializeContext& ctx ) override
+	{
+		RS_SERIAL_PROCESS(id);
+		RS_SERIAL_PROCESS(status);
+		RS_SERIAL_PROCESS(time_stamp);
+	}
 };
 
 
