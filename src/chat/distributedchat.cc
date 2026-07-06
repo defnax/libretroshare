@@ -613,101 +613,89 @@ void DistributedChatService::handleRecvChatLobbyList(RsChatLobbyListItem *item)
 void DistributedChatService::addTimeShiftStatistics(int D, const RsGxsId& gxsId)
 {
 #ifndef DEBUG_TIME_SHIFT
-    (void)gxsId;	// only used by the debug logs below
+	(void)gxsId;	// only used by the time-shift debug logs below
 #endif
+	// Bursts of messages from friends using a wrong system clock can trigger a TIME_SHIFT_PROBLEM event 
+	// We eliminate that by taking into account at most 1 message per second
+	static rstime_t last_stat_time = 0;
+	rstime_t now = time(NULL);
+	if(now <= last_stat_time)
+		return;
+	last_stat_time = now;
 
-    // --- GLOBAL RATE LIMITER ---
-    // We only take at most 1 sample per second from the whole network.
-    // This provides robustness against network bursts/batching from relays.
-    static rstime_t last_stat_time = 0;
-    rstime_t now = time(NULL);
+	static const int S = 50 ; // accuracy up to 2^50 second. Quite conservative!
+	static int total = 0 ;
+	static std::vector<int> log_delay_histogram(S,0) ;
 
-    if (now <= last_stat_time) {
-        return;
-    }
-    last_stat_time = now;
+	int delay = (D<0)?(-D):D ;
 
-    // --- EXISTING HISTOGRAM LOGIC ---
-    static const int S = 50;
-    static int total = 0;
-    static std::vector<int> log_delay_histogram(S, 0);
+	if(delay < 0)
+		delay = -delay ;
+
+	// compute log2.
+	int l = 0 ;
+	while(delay > 0) delay >>= 1, ++l ;
+
+	int bin = std::min(S-1,l) ;
+	++log_delay_histogram[bin] ;
+	++total ;
 
 #ifdef DEBUG_TIME_SHIFT
-    // Track contributors for the current window to debug who caused an alert
-    static std::map<RsGxsId, int> contributors;
+	// Keep track of which identities feed the current window, to tell who caused an alert.
+	static std::map<RsGxsId,int> contributors ;
+	contributors[gxsId]++ ;
+
+	std::string identityName = gxsId.toStdString() ;
+	RsIdentityDetails idDetails ;
+	if(rsIdentity && rsIdentity->getIdDetails(gxsId,idDetails))
+		identityName = idDetails.mNickname + " (" + gxsId.toStdString().substr(0,6) + ")" ;
+
+	RsDbg() << "[TS-ACCEPT] sample from " << identityName << " (delay=" << D << "s, log=" << bin << ", total=" << total << ")" ;
 #endif
 
-    int delay = (D < 0) ? (-D) : D;
-    int l = 0;
-    while (delay > 0) {
-        delay >>= 1;
-        ++l;
-    }
+	if(total > 30)
+	{
+		float t = 0.0f ;
+		int i=0 ;
+		for(;i<S && t<0.5*total;++i)
+			t += log_delay_histogram[i] ;
 
-    int bin = std::min(S - 1, l);
-    ++log_delay_histogram[bin];
-    ++total;
+		if(i == 0) return ;									// cannot happen, since total>0 so i is incremented
+		if(log_delay_histogram[i-1] == 0) return ;	// cannot happen, either, but let's be cautious.
+
+		float expected = ( i * (log_delay_histogram[i-1] - t + total*0.5) + (i-1) * (t - total*0.5) ) / (float)log_delay_histogram[i-1] - 1;
 
 #ifdef DEBUG_TIME_SHIFT
-    contributors[gxsId]++;
-
-    // Debug Log: Accepted. Resolve identity name for readable logs.
-    std::string identityName = gxsId.toStdString();
-    RsIdentityDetails idDetails;
-    if (rsIdentity && rsIdentity->getIdDetails(gxsId, idDetails))
-        identityName = idDetails.mNickname + " (" + gxsId.toStdString().substr(0, 6) + ")";
-
-    RsDbg() << "[TS-ACCEPT] Accepted sample from " << identityName
-            << " (Delay: " << D << "s, LogBin: " << bin << ")";
+		std::string top_peers ;
+		for(auto const& [id,count] : contributors)
+		{
+			std::string peerName = id.toStdString().substr(0,6) ;
+			RsIdentityDetails pDet ;
+			if(rsIdentity && rsIdentity->getIdDetails(id,pDet))
+				peerName = pDet.mNickname ;
+			top_peers += peerName + "(" + std::to_string(count) + ") " ;
+		}
+		RsDbg() << "[TS-STATS] window complete. Expected log delay: " << expected << ", contributors: " << top_peers ;
 #endif
 
-    // When the urn has 30 votes, we calculate the median
-    if (total > 30) {
-        float t = 0.0f;
-        int i = 0;
-        for (; i < S && t < 0.5 * total; ++i) {
-            t += log_delay_histogram[i];
+		if(expected > 9)	// if more than 20 samples
+        {
+#ifdef DEBUG_TIME_SHIFT
+            RsDbg() << "[TS-ALERT] time shift problem detected (expected log delay=" << expected << ")." ;
+#endif
+            auto ev = std::make_shared<RsSystemEvent>();
+            ev->mEventCode = RsSystemEventCode::TIME_SHIFT_PROBLEM;
+            ev->mTimeShift = (int)pow(2.0f,expected);
+            rsEvents->postEvent(ev);
         }
 
-        if (i > 0 && log_delay_histogram[i - 1] != 0) {
-            // Median interpolation
-            float expected = ( i * (log_delay_histogram[i-1] - t + total*0.5) + (i-1) * (t - total*0.5) ) / (float)log_delay_histogram[i-1] - 1;
-
+		total = 0.0f ;
+		log_delay_histogram.clear() ;
+		log_delay_histogram.resize(S,0) ;
 #ifdef DEBUG_TIME_SHIFT
-            // Construct the contributors string for the log
-            std::string top_peers = "";
-            for (auto const& [id, count] : contributors) {
-                std::string peerName = id.toStdString().substr(0, 6);
-                RsIdentityDetails pDet;
-                if (rsIdentity && rsIdentity->getIdDetails(id, pDet)) {
-                    peerName = pDet.mNickname;
-                }
-                top_peers += peerName + "(" + std::to_string(count) + ") ";
-            }
-
-            // Log the result of the election
-            RsDbg() << "[TS-STATS] Window reached. ExpectedLogDelay: " << expected
-                    << " | Contributors: " << top_peers;
+		contributors.clear() ;
 #endif
-
-            // Trigger alert if the shift is significant (> 2^9 seconds approx 512s)
-            if (expected > 9) { 
-                RsDbg() << "[TS-ALERT] Time shift problem detected! Significant drift in network clock synchronization.";
-                
-                auto ev = std::make_shared<RsSystemEvent>();
-                ev->mEventCode = RsSystemEventCode::TIME_SHIFT_PROBLEM;
-                ev->mTimeShift = (int)pow(2.0f, expected);
-                rsEvents->postEvent(ev);
-            }
-        }
-
-        // Reset for the next window
-        total = 0;
-#ifdef DEBUG_TIME_SHIFT
-        contributors.clear();
-#endif
-        log_delay_histogram.assign(S, 0);
-    }
+	}
 }
 
 void DistributedChatService::handleRecvChatLobbyEventItem(RsChatLobbyEventItem *item)
@@ -789,7 +777,7 @@ void DistributedChatService::handleRecvChatLobbyEventItem(RsChatLobbyEventItem *
 	}
 	// add a routing clue for this peer/GXSid combination. This is quite reliable since the lobby transport is almost instantaneous
 	rsGRouter->addRoutingClue(GRouterKeyId(item->signature.keyId),item->PeerId()) ;
-
+    
 	if(! bounceLobbyObject(item,item->PeerId()))
 		return ;
 
