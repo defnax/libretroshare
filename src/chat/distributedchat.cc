@@ -642,8 +642,9 @@ void DistributedChatService::addTimeShiftStatistics(int D, const RsGxsId& gxsId)
 
 #ifdef DEBUG_TIME_SHIFT
 	// Keep track of which identities feed the current window, to tell who caused an alert.
+	// Insert with an explicit 0 (rather than relying on value-initialization) then bump the count.
 	static std::map<RsGxsId,int> contributors ;
-	contributors[gxsId]++ ;
+	contributors.insert(std::make_pair(gxsId,0)).first->second++ ;
 
 	std::string identityName = gxsId.toStdString() ;
 	RsIdentityDetails idDetails ;
