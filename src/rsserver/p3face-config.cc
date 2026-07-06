@@ -104,7 +104,10 @@ void RsServer::rsGlobalShutDown()
 	fullstop();
 
 #ifdef RS_JSONAPI
-	rsJsonApi->fullstop();
+	if (rsJsonApi != nullptr)
+	{
+		rsJsonApi->fullstop();
+	}
 #endif
 
 	AuthPGP::exit();
