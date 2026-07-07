@@ -2148,7 +2148,15 @@ RsInit::LoadCertificateStatus RsLoginHelper::attemptLogin(const RsPeerId& accoun
                 return RsInit::ERR_CANNOT_CONFIGURE_TOR;
 
         if(ret == RsInit::OK && RsControl::instance()->StartupRetroShare() == 1)
+        {
+#ifdef RS_JSONAPI
+            if(rsJsonApi)
+            {
+                rsJsonApi->authorizeUser(account.toStdString(), password);
+            }
+#endif
             return RsInit::OK;
+        }
 
         return ret;
     }
