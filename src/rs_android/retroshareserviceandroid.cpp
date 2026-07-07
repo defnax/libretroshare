@@ -74,6 +74,10 @@ RetroShareServiceAndroid::start(
 		return jni::Make<ErrorConditionWrap>(env, std::errc::no_child_process);
 	}
 
+#ifdef RS_JSONAPI
+	RsInit::startupWebServices(conf, true);
+#endif
+
 	return jni::Make<ErrorConditionWrap>(env, std::error_condition());
 }
 
