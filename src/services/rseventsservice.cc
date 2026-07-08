@@ -138,8 +138,25 @@ std::error_condition RsEventsService::registerEventsHandler(
         hId = generateUniqueHandlerId_unlocked();
     else
     {
-        print_stacktrace();
-        RsWarn() << "Overriding an existing error handler ID with a new callback. This is very unexpected. Make sure you know what you are doing." ;
+        /* A non-zero hId is a legitimate, documented use case: the caller may
+         * provide an id previously obtained from generateUniqueHandlerId() (see
+         * registerEventsHandler() doc in rsevents.h). This is exactly what the
+         * JSON API event-stream wrapper does, because its SSE callbacks capture
+         * the id in order to unregister themselves later. Only a hId that is
+         * actually already registered is a true override worth reporting. */
+        bool alreadyRegistered = false;
+        for(const auto& handlerMap : mHandlerMaps)
+            if(handlerMap.find(hId) != handlerMap.end())
+            {
+                alreadyRegistered = true;
+                break;
+            }
+
+        if(alreadyRegistered)
+        {
+            print_stacktrace();
+            RsWarn() << "Overriding an existing event handler ID with a new callback. This is very unexpected. Make sure you know what you are doing." ;
+        }
     }
 
 	mHandlerMaps[static_cast<std::size_t>(eventType)][hId] = multiCallback;
