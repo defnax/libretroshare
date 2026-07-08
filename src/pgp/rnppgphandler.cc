@@ -262,8 +262,23 @@ ops_keyring_t *OpenPGPSDKHandler::allocateOPSKeyring()
 
 void RNPPGPHandler::locked_timeStampKey(const RsPgpId& key_id)
 {
-    _public_keyring_map[key_id]._time_stamp = time(nullptr);
-    _trustdb_changed = true;
+    rstime_t now = time(nullptr);
+    _public_keyring_map[key_id]._time_stamp = now;
+
+    // Only flag the trust database for rewrite once per hour. This function is
+    // called on every PGP key usage (e.g. VerifySignBin(), which runs on every
+    // GXS identity validation and every connection). Flagging _trustdb_changed
+    // on each call caused the whole private trust database (thousands of
+    // packets) to be rewritten and re-read every few seconds. Updating the
+    // in-memory usage timestamp on every call is cheap and stays; only the
+    // on-disk sync is throttled. OpenPGPSDKHandler throttles the same way (see
+    // openpgpsdkhandler.cc); the rnp port had dropped it.
+    static rstime_t last_trustdb_update_because_of_stamp = 0;
+    if(now > last_trustdb_update_because_of_stamp + 3600)
+    {
+        _trustdb_changed = true;
+        last_trustdb_update_because_of_stamp = now;
+    }
 }
 
 bool rnp_get_passphrase_cb(rnp_ffi_t        /* ffi */,
