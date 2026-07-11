@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <deque>
 #include <array>
+#include <mutex>
 
 #include "retroshare/rsevents.h"
 #include "util/rsthreads.h"
@@ -69,6 +70,20 @@ protected:
 	std::error_condition isEventInvalid(std::shared_ptr<const RsEvent> event);
 
 	RsMutex mHandlerMapMtx;
+
+	/** Held by handleEvent() for the whole duration of the callbacks dispatch
+	 * loop, so that unregisterEventsHandler() can act as a barrier: after it
+	 * returns, the removed handler is guaranteed to be neither running nor about
+	 * to start. Without this, unregister only removes the handler from the map,
+	 * but handleEvent() runs callbacks on a *copy* taken outside mHandlerMapMtx
+	 * (on purpose, to let callbacks re-enter), so a callback whose owner is
+	 * being destroyed on another thread could still fire against a dangling
+	 * object -> use-after-free (typically a SIGSEGV in qobject_cast<QThread*>
+	 * inside RsQThreadUtils::postToObject at shutdown). Recursive so that a
+	 * callback re-entering (self-unregister or synchronous sendEvent) on the
+	 * dispatching thread does not deadlock. */
+	std::recursive_mutex mDispatchMtx;
+
 	RsEventsHandlerId_t mLastHandlerId;
 
 	/** Storage for event handlers, keep 10 extra types for plugins that might
