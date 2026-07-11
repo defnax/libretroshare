@@ -103,6 +103,14 @@ void RsServer::rsGlobalShutDown()
 
 	fullstop();
 
+	/* Stop the per-peer network I/O threads (pqithreadstreamer). They are
+	 * otherwise never stopped at shutdown and keep deserialising incoming
+	 * packets, which crashes/floods the log once the static SmallObject
+	 * allocator and its mutex are destroyed during process teardown.
+	 * Must run after fullstop() so the RsServer tick thread is no longer
+	 * iterating the peer list concurrently. */
+	if(pqih) pqih->fullstopAllThreads();
+
 #ifdef RS_JSONAPI
 	if(rsJsonApi) rsJsonApi->fullstop();
 #endif
