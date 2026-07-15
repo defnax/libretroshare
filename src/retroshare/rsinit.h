@@ -419,7 +419,7 @@ public:
 
 	/**
 	 * @brief Normal way to attempt login
-	 * @jsonapi{development,unauthenticated}
+	 * @jsonapi{development,manualwrapper}
 	 * @param[in] account Id of the account to which attempt login
 	 * @param[in] password Password for the given account
 	 * @return RsInit::OK if login attempt success, error code otherwhise
