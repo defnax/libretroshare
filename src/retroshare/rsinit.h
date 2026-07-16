@@ -419,9 +419,17 @@ public:
 
 	/**
 	 * @brief Normal way to attempt login
-	 * @jsonapi{development,unauthenticated}
+	 * @jsonapi{development,manualwrapper}
 	 * @param[in] account Id of the account to which attempt login
 	 * @param[in] password Password for the given account
+	 * param[in] apiUser (JSON API only) string containing username for JSON API
+	 *	so it can be later used to authenticate JSON API calls. It is passed
+	 *	down to @see RsJsonApi::authorizeUser under the hood.
+	 * param[in] apiPass (JSON API only) string containing password for JSON API
+	 *	so it can be later used to authenticate JSON API calls. It is passed
+	 *	down to @see RsJsonApi::authorizeUser under the hood.
+	 *	To improve security we strongly advise to not use the same as the
+	 *	password used for the PGP key.
 	 * @return RsInit::OK if login attempt success, error code otherwhise
 	 */
 	RsInit::LoadCertificateStatus attemptLogin(
