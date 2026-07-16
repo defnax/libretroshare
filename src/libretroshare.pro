@@ -940,7 +940,7 @@ rs_jsonapi {
     }
 
     DOXIGEN_INPUT_DIRECTORY=$$clean_path($${PWD})
-    DOXIGEN_CONFIG_SRC=$$clean_path($${RS_SRC_PATH}/jsonapi-generator/src/jsonapi-generator-doxygen.conf)
+    DOXIGEN_CONFIG_SRC=$$clean_path($${PWD}/jsonapi/jsonapi-generator-doxygen.conf)
     DOXIGEN_CONFIG_OUT=$$clean_path($${JSONAPI_GENERATOR_OUT}/jsonapi-generator-doxygen-final.conf)
     WRAPPERS_INCL_FILE=$$clean_path($${JSONAPI_GENERATOR_OUT}/jsonapi-includes.inl)
     WRAPPERS_REG_FILE=$$clean_path($${JSONAPI_GENERATOR_OUT}/jsonapi-wrappers.inl)
