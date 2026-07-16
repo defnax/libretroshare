@@ -320,15 +320,8 @@ JsonApiServer::JsonApiServer(): configMutex("JsonApiServer config"),
 			}
 			else
 			{
-				// If already logged in, treat as OK so we can register the token!
-				if(rsLoginHelper->isLoggedIn())
-				{
-					retval = RsInit::OK;
-				}
-				else
-				{
-					retval = rsLoginHelper->attemptLogin(account, password);
-				}
+				// Call retroshare C++ API
+				retval = rsLoginHelper->attemptLogin(account, password);
 
 				// If login succeeded and custom API credentials were provided, authorize them!
 				if(retval == RsInit::OK && !apiUser.empty())
