@@ -419,7 +419,7 @@ public:
 
 	/**
 	 * @brief Normal way to attempt login
-	 * @jsonapi{development,manualwrapper}
+	 * @jsonapi{development,manualwrapper,unauthenticated}
 	 * @param[in] account Id of the account to which attempt login
 	 * @param[in] password Password for the given account
 	 * param[in] apiUser (JSON API only) string containing username for JSON API
