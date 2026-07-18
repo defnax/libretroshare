@@ -344,7 +344,14 @@ int pqiperson::handleNotifyEvent_locked(NetInterface *ni, int newState,
 			inConnectAttempt = false;
 
 			// STARTUP THREAD
-			activepqi->start("pqi " + PeerId().toStdString().substr(0, 11));
+			// On a reconnection over the same interface, activepqi's streamer
+			// thread is still running: only start it when it isn't, otherwise
+			// RsThread::start() logs "attempt to start already running thread"
+			// plus a stack trace on every such reconnection. The already-running
+			// thread keeps serving the (switched-over) connection, so this is
+			// purely noise removal and does not change behaviour.
+			if(!activepqi->isRunning())
+				activepqi->start("pqi " + PeerId().toStdString().substr(0, 11));
 
 			// reset all other children (clear up long UDP attempt)
 			for(it = kids.begin(); it != kids.end(); ++it)
