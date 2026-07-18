@@ -431,12 +431,25 @@ int pqiperson::fullstopthreads()
 			  << PeerId().toStdString() << std::endl;
 #endif
 
+	/* Snapshot the child connections under mPersonMtx, then release it BEFORE
+	 * joining their threads. A child's streamer thread may still be delivering a
+	 * received item that synchronously replies on the same stack through
+	 * pqiperson::SendItem(), which locks mPersonMtx; holding mPersonMtx across the
+	 * (blocking) fullstop() join would deadlock -- exactly the reason
+	 * pqipersongrp::fullstopAllThreads() already drops coreMtx before waiting.
+	 * Observed at shutdown as an endless RsThread::waitWhileStopping() on a
+	 * "pqi <peer>" thread that was answering an RTT ping. */
+	std::list<pqiconnect *> children;
+	{
+		RS_STACK_MUTEX(mPersonMtx);
+		for(std::map<uint32_t, pqiconnect *>::iterator it = kids.begin(); it != kids.end(); ++it)
+			children.push_back(it->second);
+	}
+
+	for(std::list<pqiconnect *>::iterator it = children.begin(); it != children.end(); ++it)
+		(*it)->fullstop(); // WAIT FOR THREAD TO STOP.
+
 	RS_STACK_MUTEX(mPersonMtx);
-
-	std::map<uint32_t, pqiconnect *>::iterator it;
-	for(it = kids.begin(); it != kids.end(); ++it)
-		(it->second)->fullstop(); // WAIT FOR THREAD TO STOP.
-
 	activepqi = NULL;
 	active = false;
 	lastHeartbeatReceived = 0;
