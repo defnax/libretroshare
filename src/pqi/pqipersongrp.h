@@ -66,6 +66,7 @@ virtual void    statusChanged();
 	/******************* Peer Control **************************/
 virtual int addPeer(const RsPeerId& id); /* can be overloaded for testing */
 int     removePeer(const RsPeerId& id);
+int     fullstopAllThreads(); /* stop every peer's I/O threads (used at shutdown) */
 int     connectPeer(const RsPeerId& id
 #ifdef WINDOWS_SYS
 ///////////////////////////////////////////////////////////

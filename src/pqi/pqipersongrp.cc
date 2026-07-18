@@ -460,6 +460,53 @@ int     pqipersongrp::removePeer(const RsPeerId& id)
 	return 1;
 }
 
+int     pqipersongrp::fullstopAllThreads()
+{
+	/* Stop every peer's network I/O threads at shutdown. Unlike removePeer() this
+	 * does NOT delete the persons, it only makes sure no pqithreadstreamer is left
+	 * running once RetroShare tears down its static objects (otherwise those
+	 * detached threads keep deserialising incoming packets and crash/flood the log
+	 * when the static SmallObject allocator and its mutex get destroyed).
+	 *
+	 * Two phases on purpose:
+	 *  1) while holding coreMtx, signal every peer to stop and close its sockets.
+	 *     reset() calls askForStop() on the connection threads and closes the
+	 *     sockets; both are non-blocking, so holding coreMtx here is safe (same as
+	 *     removePeer()).
+	 *  2) release coreMtx, THEN wait for the threads to really stop.
+	 * We must NOT hold coreMtx while waiting: a peer thread that is delivering a
+	 * received item may still need coreMtx to queue a reply
+	 * (pqihandler::queueOutRsItem), so it would never finish and we would wait for
+	 * it forever -> deadlock. */
+
+	std::list<pqiperson *> persons;
+
+	{
+		RsStackMutex stack(coreMtx); /**************** LOCKED MUTEX ****************/
+
+		for(std::map<RsPeerId, SearchModule *>::iterator it = mods.begin(); it != mods.end(); ++it)
+		{
+			// mods also holds non-pqiperson interfaces (e.g. the pqiloopback for
+			// our own node) which have no network I/O threads. Only pqiperson has
+			// connection threads to stop, so skip anything that is not one -- a
+			// blind cast would crash on the loopback.
+			pqiperson *p = dynamic_cast<pqiperson *>(it->second->pqi);
+			if(!p)
+				continue;
+			p -> stoplistening();
+			p -> reset(); // askForStop() the threads + close the sockets (non-blocking)
+			persons.push_back(p);
+		}
+	}
+
+	// coreMtx released: peer threads that still need it can now make progress and
+	// notice the stop request. Only now do we wait for them to actually stop.
+	for(std::list<pqiperson *>::iterator it = persons.begin(); it != persons.end(); ++it)
+		(*it) -> fullstopthreads(); // WAIT FOR THREADS TO STOP.
+
+	return 1;
+}
+
 int pqipersongrp::tagHeartbeatRecvd(const RsPeerId& id)
 {
         std::map<RsPeerId, SearchModule *>::iterator it;
