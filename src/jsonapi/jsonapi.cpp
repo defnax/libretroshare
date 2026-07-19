@@ -283,6 +283,65 @@ JsonApiServer::JsonApiServer(): configMutex("JsonApiServer config"),
 		} );
 	}, false);
 
+	registerHandler("/rsLoginHelper/attemptLogin",
+	                [this](const std::shared_ptr<rb::Session> session)
+	{
+		auto reqSize = session->get_request()->get_header("Content-Length", 0);
+		session->fetch( static_cast<size_t>(reqSize), [this](
+		                const std::shared_ptr<rb::Session> session,
+		                const rb::Bytes& body )
+		{
+			INITIALIZE_API_CALL_JSON_CONTEXT;
+
+			RsPeerId account;
+			std::string password;
+
+			// JSON API only
+			std::string apiUser;
+			std::string apiPass;
+
+			// deserialize input parameters from JSON
+			{
+				RsGenericSerializer::SerializeContext& ctx(cReq);
+				RsGenericSerializer::SerializeJob j(RsGenericSerializer::FROM_JSON);
+				RS_SERIAL_PROCESS(account);
+				RS_SERIAL_PROCESS(password);
+
+				// JSON API only
+				RS_SERIAL_PROCESS(apiUser);
+				RS_SERIAL_PROCESS(apiPass);
+			}
+
+			RsInit::LoadCertificateStatus retval;
+
+			if(!apiUser.empty() && badApiCredientalsFormat(apiUser, apiPass))
+			{
+				retval = RsInit::LoadCertificateStatus::ERR_UNKNOWN;
+			}
+			else
+			{
+				// Call retroshare C++ API
+				retval = rsLoginHelper->attemptLogin(account, password);
+
+				// If login succeeded and custom API credentials were provided, authorize them!
+				if(retval == RsInit::OK && !apiUser.empty())
+				{
+					authorizeUser(apiUser, apiPass);
+				}
+			}
+
+			// serialize out parameters and return value to JSON
+			{
+				RsGenericSerializer::SerializeContext& ctx(cAns);
+				RsGenericSerializer::SerializeJob j(RsGenericSerializer::TO_JSON);
+				RS_SERIAL_PROCESS(retval);
+			}
+
+			// return them to the API caller
+			DEFAULT_API_CALL_JSON_RETURN(rb::OK);
+		} );
+	}, false);
+
 	registerHandler("/rsControl/rsGlobalShutDown",
 	                [](const std::shared_ptr<rb::Session> session)
 	{

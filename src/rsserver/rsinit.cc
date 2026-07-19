@@ -1345,6 +1345,17 @@ int RsServer::StartupRetroShare()
 	//
 	mPluginsManager->loadPlugins(programatically_inserted_plugins) ;
 
+#ifdef RS_JSONAPI
+	if (rsJsonApi)
+	{
+		p3ConfigMgr *cfgmgr = dynamic_cast<p3ConfigMgr*>(mConfigMgr);
+		if (cfgmgr != nullptr)
+		{
+			rsJsonApi->connectToConfigManager(*cfgmgr);
+		}
+	}
+#endif
+
     	/**** Reputation system ****/
 
     	p3GxsReputation *mReputations = new p3GxsReputation(mLinkMgr) ;
