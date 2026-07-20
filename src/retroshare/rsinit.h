@@ -420,9 +420,9 @@ public:
 	/**
 	 * @brief Normal way to attempt login
 	 * @jsonapi{development,manualwrapper}
+	 * unauthenticated
 	 * @param[in] account Id of the account to which attempt login
 	 * @param[in] password Password for the given account
-	 * unauthenticated
 	 * param[in] apiUser (JSON API only) string containing username for JSON API
 	 *	so it can be later used to authenticate JSON API calls. It is passed
 	 *	down to @see RsJsonApi::authorizeUser under the hood.
