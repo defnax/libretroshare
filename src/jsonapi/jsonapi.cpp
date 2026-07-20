@@ -35,6 +35,7 @@
 #include "retroshare/rsfiles.h"
 #include "util/radix64.h"
 #include "retroshare/rsinit.h"
+#include "retroshare/rstor.h"
 #include "util/rsnet.h"
 #include "retroshare/rsiface.h"
 #include "retroshare/rsinit.h"
@@ -475,6 +476,72 @@ JsonApiServer::JsonApiServer(): configMutex("JsonApiServer config"),
 			 * happen and if it happens an error message is printed
 			 * accordingly by RsThread::fullstop() */
 			if(!retval) RsThread::async([this](){ unProtectedRestart(); });
+		} );
+	}, true);
+
+	registerHandler("/rsAccounts/isTorAuto",
+	                [this](const std::shared_ptr<rb::Session> session)
+	{
+		auto reqSize = session->get_request()->get_header("Content-Length", 0);
+		session->fetch( static_cast<size_t>(reqSize), [](
+		                const std::shared_ptr<rb::Session> session,
+		                const rb::Bytes& body )
+		{
+			INITIALIZE_API_CALL_JSON_CONTEXT;
+
+			bool retval = RsAccounts::isTorAuto();
+
+			{
+				RsGenericSerializer::SerializeContext& ctx(cAns);
+				RsGenericSerializer::SerializeJob j(RsGenericSerializer::TO_JSON);
+				RS_SERIAL_PROCESS(retval);
+			}
+
+			DEFAULT_API_CALL_JSON_RETURN(rb::OK);
+		} );
+	}, true);
+
+	registerHandler("/rsTor/torStatus",
+	                [this](const std::shared_ptr<rb::Session> session)
+	{
+		auto reqSize = session->get_request()->get_header("Content-Length", 0);
+		session->fetch( static_cast<size_t>(reqSize), [](
+		                const std::shared_ptr<rb::Session> session,
+		                const rb::Bytes& body )
+		{
+			INITIALIZE_API_CALL_JSON_CONTEXT;
+
+			RsTorStatus retval = RsTor::torStatus();
+
+			{
+				RsGenericSerializer::SerializeContext& ctx(cAns);
+				RsGenericSerializer::SerializeJob j(RsGenericSerializer::TO_JSON);
+				RS_SERIAL_PROCESS(retval);
+			}
+
+			DEFAULT_API_CALL_JSON_RETURN(rb::OK);
+		} );
+	}, true);
+
+	registerHandler("/rsTor/torConnectivityStatus",
+	                [this](const std::shared_ptr<rb::Session> session)
+	{
+		auto reqSize = session->get_request()->get_header("Content-Length", 0);
+		session->fetch( static_cast<size_t>(reqSize), [](
+		                const std::shared_ptr<rb::Session> session,
+		                const rb::Bytes& body )
+		{
+			INITIALIZE_API_CALL_JSON_CONTEXT;
+
+			RsTorConnectivityStatus retval = RsTor::torConnectivityStatus();
+
+			{
+				RsGenericSerializer::SerializeContext& ctx(cAns);
+				RsGenericSerializer::SerializeJob j(RsGenericSerializer::TO_JSON);
+				RS_SERIAL_PROCESS(retval);
+			}
+
+			DEFAULT_API_CALL_JSON_RETURN(rb::OK);
 		} );
 	}, true);
 

@@ -109,12 +109,14 @@ public:
     /*!
      * \brief torStatus
      * \return Status of the Tor service used by RS
+     * @jsonapi{development}
      */
     static RsTorStatus torStatus() ;
 
     /*!
      * \brief torConnectivityStatus
      * \return  Status of the connectivity/authentication between RS and Tor
+     * @jsonapi{development}
      */
     static RsTorConnectivityStatus torConnectivityStatus() ;
 
