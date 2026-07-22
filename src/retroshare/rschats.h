@@ -458,7 +458,27 @@ public:
     virtual std::string getCustomStateString(const RsPeerId &peer_id) = 0;
 
     // get avatar data for peer pid
+    [[deprecated("Use getAvatarDataV2 or getAvatarDataPtr instead")]]
     virtual void getAvatarData(const RsPeerId& pid,unsigned char *& data,int& size) = 0 ;
+
+    /**
+     * @brief getAvatarDataPtr get direct read-only pointer to avatar binary data (Zero-Copy for C++)
+     * @param[in] pid peer id
+     * @param[out] data_ptr pointer to internal image memory
+     * @param[out] size size of image in bytes
+     * @return true if avatar is available
+     */
+    virtual bool getAvatarDataPtr(const RsPeerId& pid, const unsigned char*& data_ptr, uint32_t& size) = 0;
+
+    /**
+     * @brief getAvatarDataV2 get avatar data for peer pid in Base64 string format
+     * @jsonapi{development}
+     * @param[in] pid peer id
+     * @param[out] avatar_base64_string base64-encoded avatar binary data
+     * @return true on success
+     */
+    virtual bool getAvatarDataV2(const RsPeerId& pid, std::string& avatar_base64_string) = 0;
+
     // set own avatar data
     virtual void setOwnNodeAvatarData(const unsigned char *data,int size) = 0 ;
     virtual void getOwnNodeAvatarData(unsigned char *& data,int& size) = 0 ;

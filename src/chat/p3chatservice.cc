@@ -30,6 +30,7 @@
 #include "crypto/rsaes.h"
 #include "util/rsrandom.h"
 #include "util/rsstring.h"
+#include "util/rsbase64.h"
 #include "retroshare/rsiface.h"
 #include "retroshare/rspeers.h"
 #include "retroshare/rsstatus.h"
@@ -1541,6 +1542,49 @@ void p3ChatService::getAvatarData(const RsPeerId& peer_id,unsigned char *& data,
             }
 		}
 	}
+}
+
+bool p3ChatService::getAvatarDataPtr(const RsPeerId& pid, const unsigned char*& data_ptr, uint32_t& size)
+{
+	RsStackMutex stack(mChatMtx);
+	auto it = _avatars.find(pid);
+	if (it != _avatars.end() && it->second && it->second->_image_data && it->second->_image_size > 0)
+	{
+		data_ptr = it->second->_image_data;
+		size = it->second->_image_size;
+		it->second->_peer_is_new = false;
+		return true;
+	}
+
+	data_ptr = nullptr;
+	size = 0;
+
+	time_t now = time(nullptr);
+	if (it == _avatars.end())
+	{
+		_avatars[pid] = new AvatarInfo();
+		it = _avatars.find(pid);
+	}
+
+	if (now - it->second->_last_request_time > 60)
+	{
+		it->second->_last_request_time = now;
+		sendAvatarRequest(pid);
+	}
+
+	return false;
+}
+
+bool p3ChatService::getAvatarDataV2(const RsPeerId& pid, std::string& avatar_base64_string)
+{
+	const unsigned char* data_ptr = nullptr;
+	uint32_t size = 0;
+	if (getAvatarDataPtr(pid, data_ptr, size) && data_ptr && size > 0)
+	{
+		RsBase64::encode(data_ptr, size, avatar_base64_string, false, false);
+		return true;
+	}
+	return false;
 }
 
 void p3ChatService::sendAvatarRequest(const RsPeerId& peer_id)
