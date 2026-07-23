@@ -846,34 +846,41 @@ uint16_t RsTor::socksPort()
     return instance()->control()->socksPort();
 }
 
+static RsTorStatus torStatus(Tor::TorControl::TorStatus t)
+{
+    switch(t)
+    {
+    default:
+    case TorControl::TorUnknown:   return RsTorStatus::UNKNOWN;
+    case TorControl::TorOffline:   return RsTorStatus::OFFLINE;
+    case TorControl::TorReady:     return RsTorStatus::READY;
+    }
+}
+
 RsTorStatus RsTor::torStatus()
 {
-    TorControl::TorStatus ts = instance()->control()->torStatus();
+    return ::torStatus(instance()->control()->torStatus());
+}
 
-    switch(ts)
+static RsTorConnectivityStatus torConnectivityStatus(Tor::TorControl::Status t)
+{
+    switch(t)
     {
-    case TorControl::TorOffline: return RsTorStatus::OFFLINE;
-    case TorControl::TorReady:   return RsTorStatus::READY;
-
     default:
-    case TorControl::TorUnknown: return RsTorStatus::UNKNOWN;
+    case TorControl::Error:              return RsTorConnectivityStatus::ERROR;
+    case TorControl::NotConnected:       return RsTorConnectivityStatus::NOT_CONNECTED;
+    case TorControl::Connecting:         return RsTorConnectivityStatus::CONNECTING;
+    case TorControl::SocketConnected:    return RsTorConnectivityStatus::SOCKET_CONNECTED;
+    case TorControl::Authenticating:     return RsTorConnectivityStatus::AUTHENTICATING;
+    case TorControl::Authenticated:      return RsTorConnectivityStatus::AUTHENTICATED;
+    case TorControl::HiddenServiceReady: return RsTorConnectivityStatus::HIDDEN_SERVICE_READY;
+    case TorControl::Unknown:            return RsTorConnectivityStatus::UNKNOWN;
     }
 }
 
 RsTorConnectivityStatus RsTor::torConnectivityStatus()
 {
-    TorControl::Status ts = instance()->control()->status();
-
-    switch(ts)
-    {
-    default:
-    case Tor::TorControl::Error :               return RsTorConnectivityStatus::ERROR;
-    case Tor::TorControl::NotConnected :        return RsTorConnectivityStatus::NOT_CONNECTED;
-    case Tor::TorControl::Authenticating:       return RsTorConnectivityStatus::AUTHENTICATING;
-    case Tor::TorControl::Connecting:           return RsTorConnectivityStatus::CONNECTING;
-    case Tor::TorControl::Authenticated :       return RsTorConnectivityStatus::AUTHENTICATED;
-    case Tor::TorControl::HiddenServiceReady :  return RsTorConnectivityStatus::HIDDEN_SERVICE_READY;
-    }
+    return ::torConnectivityStatus(instance()->control()->status());
 }
 
 bool RsTor::setupHiddenService()
