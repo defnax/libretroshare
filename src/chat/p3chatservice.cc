@@ -1075,20 +1075,41 @@ bool p3ChatService::receiveGxsTransMail( const RsGxsId& authorId,
                                          const uint8_t* data,
                                          uint32_t dataSize )
 {
+	uint32_t deserialisedSize = dataSize;
+	RsItem* deserialisedItem = _serializer->deserialise(
+	            const_cast<uint8_t*>(data), &deserialisedSize );
+	RsChatMsgItem* item = dynamic_cast<RsChatMsgItem*>(deserialisedItem);
+
+	/*
+	 * GXS transport subservice P3_CHAT_SERVICE is reserved for chat messages.
+	 * Some development versions accidentally sent RsChatStatusItem here. Older
+	 * receivers then force-cast that payload to RsChatMsgItem, displaying the
+	 * binary status flag as a broadcast message. Such packets can remain in the
+	 * store-and-forward network until the GXS transport retention period ends.
+	 * Consume them, but never pass them to the normal chat processing path.
+	 */
+	if(!item)
+	{
+		std::cerr << __PRETTY_FUNCTION__
+		          << " (WW) dropping non-message payload received on the GXS chat subservice"
+		          << std::endl;
+		delete deserialisedItem;
+		return true;
+	}
+
 	DistantChatPeerId pid;
 	uint32_t error_code;
 	if(initiateDistantChatConnexion(
 	            authorId, recipientId, pid, error_code, false ))
 	{
-		RsChatMsgItem* item = static_cast<RsChatMsgItem*>(
-		            _serializer->deserialise(
-		                const_cast<uint8_t*>(data), &dataSize ));
 		RsPeerId rd(p3GxsTunnelService::makeGxsTunnelId(authorId, recipientId));
 		item->PeerId(rd);
 		handleRecvChatMsgItem(item);
 		delete item;
 		return true;
 	}
+
+	delete item;
 
 	std::cerr << __PRETTY_FUNCTION__ << " (EE) failed initiating"
 	          << " distant chat connection error: "<< error_code
